@@ -1,0 +1,348 @@
+// RegisterScreen.js
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  Animated,
+  Easing,
+} from "react-native";
+import axios from "axios";
+import { LinearGradient } from "expo-linear-gradient";
+
+const RegisterScreen = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [gender, setGender] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [bio, setBio] = useState("");
+  const [photo1, setPhoto1] = useState("");
+  const [photo2, setPhoto2] = useState("");
+  const [photo3, setPhoto3] = useState("");
+  const [photo4, setPhoto4] = useState("");
+  const [photo5, setPhoto5] = useState("");
+  const [interests, setInterests] = useState("");
+  const [premium, setPremium] = useState(false);
+  const [locationLat, setLocationLat] = useState("");
+  const [locationLng, setLocationLng] = useState("");
+
+  // Backend URL
+  const backendURL = "http://192.168.100.164:5000/users";
+
+  const handleRegister = async () => {
+    if (!name || !email || !password || !gender) {
+      return Alert.alert("Error", "Name, email, password, and gender are required!");
+    }
+
+    try {
+      const res = await axios.post(backendURL, {
+        name,
+        email,
+        password,
+        gender,
+        date_of_birth: dateOfBirth || null,
+        bio: bio || null,
+        photo1_url: photo1 || null,
+        photo2_url: photo2 || null,
+        photo3_url: photo3 || null,
+        photo4_url: photo4 || null,
+        photo5_url: photo5 || null,
+        interests: interests ? interests.split(",").map((i) => i.trim()) : null,
+        premium_status: premium,
+        location_lat: locationLat ? parseFloat(locationLat) : null,
+        location_lng: locationLng ? parseFloat(locationLng) : null,
+      });
+
+      console.log("Server Response:", res.data);
+      Alert.alert("Success", `Welcome ${res.data.user.name}!`);
+
+      // Clear form
+      setName("");
+      setEmail("");
+      setPassword("");
+      setGender("");
+      setDateOfBirth("");
+      setBio("");
+      setPhoto1("");
+      setPhoto2("");
+      setPhoto3("");
+      setPhoto4("");
+      setPhoto5("");
+      setInterests("");
+      setPremium(false);
+      setLocationLat("");
+      setLocationLng("");
+    } catch (err) {
+      console.error("AXIOS ERROR:", err.response || err.message);
+      Alert.alert("Error", "Registration failed, maybe email already exists or server error");
+    }
+  };
+
+  // Floating label animation for name field
+  const floatAnim = new Animated.Value(0);
+  const handleFocus = () => {
+    Animated.timing(floatAnim, {
+      toValue: -20,
+      duration: 300,
+      useNativeDriver: true,
+      easing: Easing.out(Easing.ease),
+    }).start();
+  };
+  const handleBlur = () => {
+    if (!name) {
+      Animated.timing(floatAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.ease),
+      }).start();
+    }
+  };
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <LinearGradient
+        colors={["#8e44ad66", "#3498db66"]}
+        style={styles.glassCard}
+      >
+        <Text style={styles.title}>Create Your Account</Text>
+
+        {/* Name */}
+        <View style={styles.inputContainer}>
+          <Animated.Text
+            style={[styles.label, { transform: [{ translateY: floatAnim }] }]}
+          >
+            Name
+          </Animated.Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your name"
+            value={name}
+            onChangeText={setName}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+          />
+        </View>
+
+        {/* Email */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+        </View>
+
+        {/* Password */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Password</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+        </View>
+
+        {/* Gender */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Gender</Text>
+          <View style={styles.genderContainer}>
+            {["Male", "Female", "Other"].map((g) => (
+              <TouchableOpacity
+                key={g}
+                style={[styles.genderButton, gender === g && styles.genderSelected]}
+                onPress={() => setGender(g)}
+              >
+                <Text style={[styles.genderText, gender === g && styles.genderTextSelected]}>
+                  {g}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Date of Birth */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Date of Birth</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="YYYY-MM-DD"
+            value={dateOfBirth}
+            onChangeText={setDateOfBirth}
+          />
+        </View>
+
+        {/* Bio */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Bio</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Short bio about you"
+            value={bio}
+            onChangeText={setBio}
+          />
+        </View>
+
+        {/* Photos */}
+        {[photo1, photo2, photo3, photo4, photo5].map((photo, idx) => (
+          <View style={styles.inputContainer} key={idx}>
+            <Text style={styles.label}>Photo {idx + 1} URL</Text>
+            <TextInput
+              style={styles.input}
+              placeholder={`Photo ${idx + 1} URL`}
+              value={[photo1, photo2, photo3, photo4, photo5][idx]}
+              onChangeText={(text) => {
+                if (idx === 0) setPhoto1(text);
+                else if (idx === 1) setPhoto2(text);
+                else if (idx === 2) setPhoto3(text);
+                else if (idx === 3) setPhoto4(text);
+                else if (idx === 4) setPhoto5(text);
+              }}
+            />
+          </View>
+        ))}
+
+        {/* Interests */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Interests (comma separated)</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. Music, Sports, Travel"
+            value={interests}
+            onChangeText={setInterests}
+          />
+        </View>
+
+        {/* Premium */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Premium?</Text>
+          <TouchableOpacity
+            style={[styles.genderButton, premium && styles.genderSelected]}
+            onPress={() => setPremium(!premium)}
+          >
+            <Text style={[styles.genderText, premium && styles.genderTextSelected]}>
+              {premium ? "Yes" : "No"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Location */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Location Latitude</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. -1.2921"
+            value={locationLat}
+            onChangeText={setLocationLat}
+            keyboardType="numeric"
+          />
+        </View>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Location Longitude</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="e.g. 36.8219"
+            value={locationLng}
+            onChangeText={setLocationLng}
+            keyboardType="numeric"
+          />
+        </View>
+
+        {/* Submit */}
+        <TouchableOpacity style={styles.submitButton} onPress={handleRegister}>
+          <Text style={styles.submitText}>Register</Text>
+        </TouchableOpacity>
+      </LinearGradient>
+    </ScrollView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+    backgroundColor: "#0f0f0f",
+  },
+  glassCard: {
+    width: "100%",
+    borderRadius: 20,
+    padding: 30,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    backdropFilter: "blur(15px)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: "bold",
+    color: "#fff",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  inputContainer: {
+    marginVertical: 10,
+  },
+  label: {
+    color: "#fff",
+    marginBottom: 5,
+    fontWeight: "600",
+  },
+  input: {
+    height: 50,
+    borderRadius: 15,
+    paddingHorizontal: 15,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    color: "#fff",
+  },
+  genderContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  genderButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#fff",
+    marginRight: 10,
+  },
+  genderSelected: {
+    backgroundColor: "#fff",
+  },
+  genderText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  genderTextSelected: {
+    color: "#000",
+  },
+  submitButton: {
+    marginTop: 20,
+    paddingVertical: 15,
+    borderRadius: 25,
+    backgroundColor: "#3498db",
+  },
+  submitText: {
+    color: "#fff",
+    fontWeight: "bold",
+    textAlign: "center",
+    fontSize: 18,
+  },
+});
+
+export default RegisterScreen;

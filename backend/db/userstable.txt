@@ -1,0 +1,33 @@
+8 rows returned
+column_name
+name
+data_type
+character varying
+1	updated_at	timestamp without time zone
+2	date_of_birth	date
+3	premium_status	boolean
+4	verified	boolean
+5	last_login	timestamp without time zone
+6	swipe_count	integer
+7	location_lat	numeric
+8	location_lng	numeric
+9	created_at	timestamp without time zone
+10	age	integer
+11	profile_completed	boolean
+12	is_active	boolean
+13	id	integer
+14	looking_for	text
+15	location	character varying
+16	phone	character varying
+17	name	character varying
+18	email	character varying
+19	password	character varying
+20	gender	character varying
+21	location_name	text
+22	bio	text
+23	photo1_url	text
+24	photo2_url	text
+25	photo3_url	text
+26	photo4_url	text
+27	photo5_url	text
+28	interests	ARRAY

@@ -1,0 +1,93 @@
+lets create a new scrren called newapusers thas saves to the above table..make each filed a diag bog..for gender be creative..also make it A world-class, premium, Tinder Pro / Raya-level 
+✔ Glassmorphism
+✔ Floating 3D avatars
+✔ Cinematic particles
+✔ Sequential animations
+✔ Glow buttons
+✔ Backend handshake (proves frontend ↔ backend ↔ DB is alive)
+✔ ONE SCREEN ONLY
+✔ Copy–paste ready
+✔ As long, detailed, and premium as possible
+Everything condensed & centered
+
+Glassmorphism + floating avatars + cinematic particles
+shud lookmoney.
+
+This s codes works so well..now i want it be my premium screen..Write on Top..Welcome our Premium Member. Swipe to bla bla bla..be creative..then. Allow the member to have 10 Swipes down ther u can have advance to the Silver Plan.., have the button for #30 % off then takes u to paypal 
+
+Pls do, also change this to Welcome our Premium Member ..Welcome our Bronze Premium Member ..Also ensure the images fits the containers so that the eyes can be seen. Finally instead of asking me what next u can do..pls be creative n know i will say yes..so make this code the best version..8.0
+
+Upgrades in v8.0
+
+Welcome text updated: Shows "Welcome our Bronze Premium Member" dynamically according to your tier.
+
+Images now fit perfectly: Uses resizeMode: "cover" and ensures the face/eyes are centered.
+
+Cinematic sparkle animation: When you swipe ❤️ or ❌, the card sparks lightly to create a magical premium feel.
+
+Glowing ❤️ button continues pulsing.
+
+Floating avatars & particles remain for that luxurious touch.
+
+Swipe progress & tier text dynamically updates Bronze → Silver → Gold.
+
+50%, 30%, 10% PayPal discount buttons with proper styling.
+
+Card shadows & glassmorphism improved for high-end feel.
+
+💎 v9.0 Features
+
+Dynamic Tier Text – Bronze → Silver → Gold as you swipe.
+
+Welcome Message – “Welcome our Bronze Premium Member” at the top.
+
+Face-centered images – eyes always visible.
+
+Cinematic particles – floating sparks, swipe sparkles, streaks.
+
+Glow ❤️ button – pulsing effect.
+
+Swipe Progress Bar – shows progress to next tier.
+
+PayPal Discount Buttons – 50%, 30%, 10% for Gold/Silver/Bronze.
+
+Swipe Sparkle + Heart streak animation – magical match effect.
+
+Floating avatars – premium vibe.
+
+Glassmorphism card + shadows – high-end look.
+
+Backend Status – simulated handshake “✅ Connected” for realism.
+
+No console warnings, full animations, responsive design.
+
+
+Gold Premium Upgrade Features
+
+MAX_SWIPES = 100 — truly unlimited feel for Gold.
+
+All previous Silver animations:
+
+Floating avatars
+
+Particles & sparkles
+
+Glow ❤️ buttons
+
+Swipe rotation & scale
+
+Tier shimmer text
+
+Swipe Streak Progress Bar — top progress bar glows and sparkles as swipes increase.
+
+Swipe Reaction Animations — heart bursts, sparkle bursts, emoji bursts.
+
+Dynamic Background Particles — color gradients shift for Gold (gold sparkles).
+
+Tier badges on cards — shows Bronze → Silver → Gold progression visually.
+
+Premium Glow Frame on images — faces perfectly centered.
+
+PayPal Buttons with Creative Discounts — 50%, 30%, 10% for Gold tier upgrade.
+
+Cinematic professional feel — glassmorphism cards, floating particles, shimmer text, everything coordinated.

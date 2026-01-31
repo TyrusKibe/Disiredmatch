@@ -1,0 +1,423 @@
+import React, { useRef, useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+  Dimensions,
+  ScrollView,
+  Alert,
+  Image,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import * as ImagePicker from "expo-image-picker";
+import DraggableFlatList from "react-native-draggable-flatlist";
+import Lightbox from "react-native-lightbox-v2";
+import axios from "axios";
+
+const { width } = Dimensions.get("window");
+
+/* ───────── CLOUDINARY UPLOAD ───────── */
+async function uploadPhoto(uri: string) {
+  const data = new FormData();
+  data.append("file", { uri, type: "image/jpeg", name: "photo.jpg" } as any);
+  data.append("upload_preset", "YOUR_UPLOAD_PRESET");
+
+  const res = await fetch(
+    "https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload",
+    { method: "POST", body: data }
+  );
+
+  const json = await res.json();
+  return json.secure_url;
+}
+
+/* ───────── TYPES ───────── */
+type PhotoItem = {
+  id: string;
+  localUri: string;
+  remoteUri?: string;
+};
+
+/* ───────── FLOATING AVATAR ───────── */
+const FloatingAvatar = ({ size, left, top, delay, uri }: any) => {
+  const float = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(float, {
+          toValue: 1,
+          duration: 8000,
+          delay,
+          useNativeDriver: true,
+        }),
+        Animated.timing(float, {
+          toValue: 0,
+          duration: 8000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, []);
+
+  return (
+    <Animated.Image
+      source={{ uri }}
+      style={{
+        position: "absolute",
+        left,
+        top,
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        transform: [
+          {
+            translateY: float.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, -18],
+            }),
+          },
+        ],
+        borderWidth: 2,
+        borderColor: "rgba(255,255,255,0.6)",
+      }}
+    />
+  );
+};
+
+/* ───────── PARTICLES ───────── */
+const Particles = () => (
+  <View style={StyleSheet.absoluteFill}>
+    {Array.from({ length: 40 }).map((_, i) => (
+      <View
+        key={i}
+        style={{
+          position: "absolute",
+          width: 2,
+          height: 2,
+          borderRadius: 2,
+          backgroundColor: "rgba(120,180,255,0.35)",
+          left: Math.random() * width,
+          top: Math.random() * 900,
+        }}
+      />
+    ))}
+  </View>
+);
+
+/* ───────── GENDER SELECTOR ───────── */
+const GenderSelector = ({ value, onChange }: any) => (
+  <View style={styles.genderWrap}>
+    {["Male", "Female"].map((g) => (
+      <TouchableOpacity
+        key={g}
+        onPress={() => onChange(g)}
+        style={[styles.genderBtn, value === g && styles.genderActive]}
+      >
+        <Text style={[styles.genderText, value === g && styles.genderTextActive]}>
+          {g}
+        </Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+);
+
+/* ───────── MAIN SCREEN ───────── */
+export default function AddUserScreen() {
+  const fade = useRef(new Animated.Value(0)).current;
+  const slide = useRef(new Animated.Value(40)).current;
+
+  const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [backendAlive, setBackendAlive] = useState(false);
+
+  const [form, setForm] = useState({
+    username: "",
+    email: "",
+    password: "",
+    gender: "",
+    age: "",
+    location: "",
+    bio: "",
+  });
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fade, {
+        toValue: 1,
+        duration: 1200,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slide, {
+        toValue: 0,
+        duration: 1200,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:5000/api/ping")
+      .then(() => setBackendAlive(true))
+      .catch(() => setBackendAlive(false));
+  }, []);
+
+  const pickPhoto = async () => {
+    if (photos.length >= 6) return;
+
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.9,
+    });
+
+    if (res.canceled || !res.assets[0]?.uri) return;
+
+    const id = Date.now().toString();
+    const localUri = res.assets[0].uri;
+
+    setPhotos((p) => [...p, { id, localUri }]);
+
+    try {
+      const remoteUri = await uploadPhoto(localUri);
+      setPhotos((p) =>
+        p.map((img) => (img.id === id ? { ...img, remoteUri } : img))
+      );
+    } catch {
+      Alert.alert("Upload failed");
+    }
+  };
+
+  const submit = async () => {
+    if (!form.username || !form.email || !form.password || !form.gender) {
+      Alert.alert("Complete profile");
+      return;
+    }
+
+    await axios.post("http://localhost:5000/api/users/add", {
+      ...form,
+      photos: photos.map((p) => p.remoteUri).filter(Boolean),
+    });
+
+    Alert.alert("Success 💎", "Elite profile created");
+  };
+
+  return (
+    <View style={styles.root}>
+      <Particles />
+
+      <FloatingAvatar
+        size={80}
+        left={20}
+        top={90}
+        delay={0}
+        uri="https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e"
+      />
+
+      <Animated.View
+        style={[
+          styles.cardWrapper,
+          { opacity: fade, transform: [{ translateY: slide }] },
+        ]}
+      >
+        <LinearGradient
+          colors={["rgba(90,160,255,0.35)", "rgba(20,45,120,0.25)"]}
+          style={styles.card}
+        >
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{
+              alignItems: "center",
+              paddingBottom: 180,
+              flexGrow: 1,
+            }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={true}
+          >
+            <Text style={styles.title}>Create Elite Profile</Text>
+            <Text style={styles.subtitle}>Your first photo defines everything</Text>
+
+            {/* PHOTOS */}
+            <DraggableFlatList
+              data={photos.concat(Array(6 - photos.length).fill(null))}
+              horizontal
+              scrollEnabled={false}   // 🔥 SCROLL FIX
+              keyExtractor={(_, i) => i.toString()}
+              renderItem={({ item, index, drag }) => (
+                <TouchableOpacity
+                  onLongPress={item ? drag : undefined}
+                  onPress={!item ? pickPhoto : undefined}
+                >
+                  <Lightbox disabled={!item}>
+                    {item ? (
+                      <Image
+                        source={{ uri: item.localUri }}
+                        style={index === 0 ? styles.heroPhoto : styles.secondaryPhoto}
+                      />
+                    ) : (
+                      <View
+                        style={[
+                          index === 0 ? styles.heroPhoto : styles.secondaryPhoto,
+                          styles.placeholder,
+                        ]}
+                      >
+                        <Text style={{ color: "#fff", fontSize: 28 }}>＋</Text>
+                      </View>
+                    )}
+                  </Lightbox>
+                </TouchableOpacity>
+              )}
+              onDragEnd={({ data }) => setPhotos(data.filter(Boolean))}
+            />
+
+            <TouchableOpacity onPress={pickPhoto} style={styles.upload}>
+              <Text style={{ color: "#fff", fontWeight: "700" }}>Add Photo</Text>
+            </TouchableOpacity>
+
+            <GenderSelector
+              value={form.gender}
+              onChange={(g: string) => setForm({ ...form, gender: g })}
+            />
+
+            {["username", "email", "password", "age", "location"].map((k) => (
+              <TextInput
+                key={k}
+                placeholder={k.toUpperCase()}
+                placeholderTextColor="#DCEAFF"
+                secureTextEntry={k === "password"}
+                style={styles.input}
+                value={(form as any)[k]}
+                onChangeText={(t) => setForm({ ...form, [k]: t })}
+              />
+            ))}
+
+            <TextInput
+              placeholder="Bio"
+              placeholderTextColor="#DCEAFF"
+              multiline
+              style={[styles.input, styles.bio]}
+              value={form.bio}
+              onChangeText={(t) => setForm({ ...form, bio: t })}
+            />
+
+            <TouchableOpacity style={styles.cta} onPress={submit}>
+              <Text style={styles.ctaText}>Create Profile</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.backend}>
+              Backend {backendAlive ? "🟢 Live" : "🔴 Offline"}
+            </Text>
+          </ScrollView>
+        </LinearGradient>
+      </Animated.View>
+    </View>
+  );
+}
+
+/* ───────── STYLES ───────── */
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: "#050B1A",
+    alignItems: "center",
+  },
+  cardWrapper: {
+    width: width * 0.94,
+    flex: 1,
+  },
+  card: {
+    flex: 1,
+    borderRadius: 34,
+    padding: 24,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: "900",
+    color: "#fff",
+  },
+  subtitle: {
+    color: "#CFE4FF",
+    marginBottom: 16,
+  },
+  heroPhoto: {
+    width: width * 0.92,
+    height: width * 0.92,
+    borderRadius: 34,
+    margin: 12,
+  },
+  secondaryPhoto: {
+    width: 110,
+    height: 110,
+    borderRadius: 24,
+    margin: 10,
+  },
+  placeholder: {
+    backgroundColor: "rgba(255,255,255,0.18)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  upload: {
+    marginVertical: 14,
+    paddingHorizontal: 28,
+    paddingVertical: 12,
+    borderRadius: 30,
+    backgroundColor: "rgba(120,180,255,0.35)",
+  },
+  genderWrap: {
+    flexDirection: "row",
+    backgroundColor: "rgba(255,255,255,0.15)",
+    borderRadius: 30,
+    padding: 6,
+    marginBottom: 12,
+  },
+  genderBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 30,
+    borderRadius: 26,
+  },
+  genderActive: {
+    backgroundColor: "#4DA3FF",
+  },
+  genderText: {
+    color: "#CFE4FF",
+    fontWeight: "600",
+  },
+  genderTextActive: {
+    color: "#05142F",
+    fontWeight: "800",
+  },
+  input: {
+    width: "92%",
+    backgroundColor: "rgba(255,255,255,0.16)",
+    borderRadius: 18,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    color: "#fff",
+    marginVertical: 6,
+    textAlign: "center",
+  },
+  bio: {
+    height: 150,
+    textAlignVertical: "top",
+  },
+  cta: {
+    marginTop: 20,
+    width: "88%",
+    paddingVertical: 18,
+    borderRadius: 42,
+    backgroundColor: "#4DA3FF",
+    alignItems: "center",
+  },
+  ctaText: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#04122C",
+  },
+  backend: {
+    marginTop: 14,
+    color: "#CFE4FF",
+    fontStyle: "italic",
+  },
+});

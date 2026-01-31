@@ -1,0 +1,80 @@
+
+*******************************************************************MEMEMEME
+**This is the registration script. Check for the licence
+	Local llreg, loregistration
+	Set Classlib To buildpjxreg Additive
+	loregistration = Createobject('Register')
+	cregistereduser = Alltrim(loregistration.susername)
+	cregisteredco = Alltrim(loregistration.susercompany)
+	l_sregcode = Alltrim(loregistration.sregcode)
+
+	llreg = loregistration.lregistered
+	isregistered = .F.
+	If llreg
+		isregistered = .T.
+	Endif
+	Release loregistration
+
+
+	If Not APP_GLOBAL.Show()
+		If Type([APP_GLOBAL.Name]) = "C"
+			Messagebox(APP_CANNOT_RUN_LOC,16, ;
+				APP_GLOBAL.cCaption )
+			APP_GLOBAL.Release()
+		Else
+			Messagebox(APP_CANNOT_RUN_LOC,16)
+		Endif
+	Else
+		llAppRan = .T.
+	Endif
+
+
+	If Type([APP_GLOBAL.lReadEvents]) = "L"
+
+		If APP_GLOBAL.lReadEvents
+* the Release() method was not used
+* but we've somehow gotten out of READ EVENTS...
+			APP_GLOBAL.Release()
+		Endif
+	Else
+		Release APP_GLOBAL
+	Endif
+
+Else
+	Messagebox(APP_WRONG_SUPERCLASS_LOC,16)
+	Release APP_GLOBAL
+Endif
+
+If lcLastSetTalk=="ON"
+	Set Talk On
+Else
+	Set Talk Off
+Endif
+
+If Type([APP_GLOBAL]) = "O"
+* non-read events app
+	Return APP_GLOBAL
+Else
+	Return llAppRan
+Endif
+
+Procedure alive
+
+Return
+
+Function retuser
+Parameters fakestr
+m.thisstr = Alltrim(fakestr)
+N = 1
+actstr = ""
+Do While N <= Len(m.thisstr)
+	i = Substr(m.thisstr,N,1)
+	If !Empty(i)
+		ival = Asc(i)-N-Len(m.thisstr)
+		actstr = actstr+Chr(ival)
+	Endif
+	N = N+1
+Enddo
+Return actstr
+
+***********************************************MEMEMEMEME

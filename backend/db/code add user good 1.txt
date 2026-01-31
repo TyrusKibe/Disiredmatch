@@ -1,0 +1,327 @@
+import React, { useRef, useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  Image,
+  Dimensions,
+  Animated,
+} from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import axios from "axios";
+import { LinearGradient } from "expo-linear-gradient";
+
+const { width } = Dimensions.get("window");
+const AVATAR_SIZE = width / 4.6;
+
+/* ---------- INTERNATIONAL PHONE MASK ---------- */
+const formatIntlPhone = (v: string) => v.replace(/[^\d+]/g, "").slice(0, 16);
+
+const RegisterScreen = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [gender, setGender] = useState("");
+  const [phone, setPhone] = useState("");
+  const [age, setAge] = useState("");
+  const [bio, setBio] = useState("");
+  const [location, setLocation] = useState("");
+  const [lookingFor, setLookingFor] = useState("");
+  const [photos, setPhotos] = useState<(any | null)[]>([null, null, null, null]);
+
+  const backendURL = "http://192.168.100.164:5000/users";
+
+  /* ---------- FLOATING AVATAR ANIMATION ---------- */
+  const floatAnim = useRef(
+    photos.map(() => new Animated.Value(0))
+  ).current;
+
+  useEffect(() => {
+    floatAnim.forEach((anim, i) => {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(anim, {
+            toValue: -8,
+            duration: 2000 + i * 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim, {
+            toValue: 0,
+            duration: 2000 + i * 300,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    });
+  }, []);
+
+  /* ---------- PHOTO PICKER ---------- */
+  const pickPhoto = async (index: number) => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert("Permission required", "Photo access is needed");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      const updated = [...photos];
+      updated[index] = result.assets[0];
+      setPhotos(updated);
+    }
+  };
+
+  /* ---------- REGISTER ---------- */
+  const handleRegister = async () => {
+    if (!name || !email || !password || !gender || !phone || !location || !age) {
+      return Alert.alert("Error", "Fill all required fields");
+    }
+
+    if (photos.some((p) => !p)) {
+      return Alert.alert("Error", "Please select all 4 photos");
+    }
+
+    if (parseInt(age) < 16) {
+      return Alert.alert("Error", "You must be at least 16 years old");
+    }
+
+    try {
+      const formData = new FormData();
+
+      formData.append("name", name);
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("gender", gender);
+      formData.append("phone", phone);
+      formData.append("age", age);
+      formData.append("bio", bio);
+      formData.append("location", location);
+      formData.append("looking_for", lookingFor);
+
+      photos.forEach((photo, index) => {
+        if (photo?.uri) {
+          formData.append(`photo${index + 1}`, {
+            uri: photo.uri,
+            name: `photo${index + 1}.jpg`,
+            type: "image/jpeg",
+          } as any);
+        }
+      });
+
+      const res = await axios.post(backendURL, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      Alert.alert("Welcome 🎉", res.data.user?.name || "Account created");
+      setPhotos([null, null, null, null]);
+    } catch (err: any) {
+      console.error(err.response?.data || err.message);
+      Alert.alert("Error", "Registration failed");
+    }
+  };
+
+  /* ---------- LIVE VALIDATION MESSAGES ---------- */
+  const validationMessages = [];
+  if (!phone.trim()) validationMessages.push("Phone required");
+  if (!email.trim()) validationMessages.push("Email required");
+  if (!location.trim()) validationMessages.push("Location required");
+  if (!age.trim() || parseInt(age) < 16) validationMessages.push("Age must be 16+");
+  if (photos.some((p) => !p)) validationMessages.push("Select all 4 photos");
+
+  const canSwipe = validationMessages.length === 0;
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <LinearGradient colors={["#0f2027", "#203a43", "#2c5364"]} style={styles.card}>
+        <Text style={styles.title}>Create Your Profile</Text>
+        <Text style={styles.subtitle}>Real people. Real connections.</Text>
+
+        <Input label="Name" value={name} onChange={setName} />
+        <Input label="Email" value={email} onChange={setEmail} />
+        <Input label="Password" value={password} onChange={setPassword} secure />
+
+        <Input
+          label="Phone No."
+          value={phone}
+          onChange={(v: string) => setPhone(formatIntlPhone(v))}
+          keyboard="phone-pad"
+        />
+
+        {/* GENDER */}
+        <Text style={styles.label}>Gender</Text>
+        <View style={styles.genderContainer}>
+          {["Male", "Female"].map((g) => (
+            <TouchableOpacity
+              key={g}
+              style={[styles.genderBtn, gender === g && styles.genderSelected]}
+              onPress={() => setGender(g)}
+            >
+              <Text style={[styles.genderText, gender === g && styles.genderTextSelected]}>
+                {g}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Input label="Age" value={age} onChange={setAge} keyboard="numeric" />
+        <Input label="Bio" value={bio} onChange={setBio} />
+        <Input label="Location" value={location} onChange={setLocation} />
+        <Input label="Looking For" value={lookingFor} onChange={setLookingFor} />
+
+        {/* PHOTOS — MOVED DOWN */}
+        <Text style={[styles.label, { marginTop: 30 }]}>Your Photos</Text>
+        <View style={styles.photoRow}>
+          {photos.map((p, i) => (
+            <Animated.View key={i} style={{ transform: [{ translateY: floatAnim[i] }] }}>
+              <TouchableOpacity style={styles.avatarWrap} onPress={() => pickPhoto(i)}>
+                {p ? <Image source={{ uri: p.uri }} style={styles.avatar} /> : <Text style={styles.plus}>＋</Text>}
+              </TouchableOpacity>
+            </Animated.View>
+          ))}
+        </View>
+
+        {/* LIVE VALIDATION MESSAGES */}
+        {validationMessages.length > 0 && (
+          <View style={{ marginTop: 16 }}>
+            {validationMessages.map((msg, idx) => (
+              <Text key={idx} style={styles.validationText}>• {msg}</Text>
+            ))}
+          </View>
+        )}
+
+        {/* SWIPE BUTTON — ONLY VISIBLE WHEN VALID */}
+        {canSwipe && (
+          <TouchableOpacity style={styles.submit} onPress={handleRegister}>
+            <Text style={styles.submitText}>Swipe Now</Text>
+          </TouchableOpacity>
+        )}
+      </LinearGradient>
+    </ScrollView>
+  );
+};
+
+const Input = ({ label, value, onChange, secure, keyboard }: any) => (
+  <View style={{ marginVertical: 8 }}>
+    <Text style={styles.label}>{label}</Text>
+    <TextInput
+      value={value}
+      onChangeText={onChange}
+      secureTextEntry={secure}
+      keyboardType={keyboard}
+      style={styles.input}
+      placeholderTextColor="#ccc"
+    />
+  </View>
+);
+
+const styles = StyleSheet.create({
+  container: {
+    flexGrow: 1,
+    justifyContent: "center",
+    padding: 20,
+    backgroundColor: "#000",
+  },
+  card: {
+    borderRadius: 26,
+    padding: 26,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#fff",
+    textAlign: "center",
+  },
+  subtitle: {
+    textAlign: "center",
+    color: "#a0c4d8",
+    marginBottom: 20,
+  },
+  label: {
+    color: "#fff",
+    marginBottom: 6,
+    fontWeight: "600",
+  },
+  input: {
+    height: 48,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    backgroundColor: "rgba(255,255,255,0.15)",
+    color: "#fff",
+  },
+  photoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 14,
+  },
+  avatarWrap: {
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  avatar: {
+    width: "100%",
+    height: "100%",
+    borderRadius: AVATAR_SIZE / 2,
+  },
+  plus: {
+    fontSize: 32,
+    color: "#fff",
+    opacity: 0.7,
+  },
+  genderContainer: {
+    flexDirection: "row",
+    marginBottom: 12,
+  },
+  genderBtn: {
+    flex: 1,
+    marginHorizontal: 5,
+    paddingVertical: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#fff",
+    alignItems: "center",
+  },
+  genderSelected: {
+    backgroundColor: "#fff",
+  },
+  genderText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  genderTextSelected: {
+    color: "#000",
+  },
+  submit: {
+    marginTop: 34,
+    paddingVertical: 16,
+    borderRadius: 30,
+    backgroundColor: "#1dd1a1",
+  },
+  submitText: {
+    color: "#000",
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "800",
+  },
+  validationText: {
+    color: "#ff6b6b",
+    fontWeight: "600",
+    fontSize: 14,
+    marginVertical: 2,
+  },
+});
+
+export default RegisterScreen;
